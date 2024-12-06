@@ -1,93 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cross-Platform Vibration</title>
-    <style>
-        .vibrate-button {
-            padding: 15px 30px;
-            font-size: 18px;
-            margin: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-    </style>
+    <!-- Import Capacitor core -->
+    <script src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
+    <!-- Import Haptics plugin -->
+    <script src="https://unpkg.com/@capacitor/haptics@latest/dist/plugin.js"></script>
+    <title>Vibration Demo</title>
 </head>
+<style>
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    button {
+        padding: 2rem;
+        margin: 0.5rem;
+    }
+</style>
 <body>
-    <button class="vibrate-button" onclick="crossPlatformVibrate()">Vibrate</button>
-    <button class="vibrate-button" onclick="crossPlatformPatternVibrate()">Pattern Vibrate</button>
+    <div class="button-container">
+        <button onclick="vibrateDevice('light')">Light Vibration</button>
+        <button onclick="vibrateDevice('medium')">Medium Vibration</button>
+        <button onclick="vibrateDevice('heavy')">Heavy Vibration</button>
+        <button onclick="notificationVibrate('success')">Success Notification</button>
+        <button onclick="notificationVibrate('warning')">Warning Notification</button>
+        <button onclick="notificationVibrate('error')">Error Notification</button>
+    </div>
 
     <script>
-        function crossPlatformVibrate() {
-            if (window.ReactNativeWebView) {
-                // React Native WebView bridge (if using React Native)
-                window.ReactNativeWebView.postMessage('vibrate');
-            } else if (navigator.vibrate) {
-                // Android
-                navigator.vibrate(200);
-            } else {
-                // iOS - Alternative feedback
-                console.log('Vibration not supported on this device');
-                // You could add visual feedback here
-                flashScreen();
+        document.addEventListener('deviceready', function() {
+            const { Haptics } = Capacitor.Plugins;
+        }, false);
+
+        async function vibrateDevice(intensity) {
+            try {
+                const { Haptics } = Capacitor.Plugins;
+                
+                switch(intensity) {
+                    case 'light':
+                        await Haptics.impact({ style: 'light' });
+                        break;
+                    case 'medium':
+                        await Haptics.impact({ style: 'medium' });
+                        break;
+                    case 'heavy':
+                        await Haptics.impact({ style: 'heavy' });
+                        break;
+                    default:
+                        await Haptics.vibrate();
+                }
+            } catch (error) {
+                console.error('Error with vibration:', error);
             }
         }
 
-        function crossPlatformPatternVibrate() {
-            if (window.ReactNativeWebView) {
-                // React Native WebView bridge
-                window.ReactNativeWebView.postMessage('patternVibrate');
-            } else if (navigator.vibrate) {
-                // Android
-                navigator.vibrate([200, 100, 200]);
-            } else {
-                // iOS - Alternative feedback
-                console.log('Pattern vibration not supported on this device');
-                // You could add visual feedback here
-                flashScreen();
+        async function notificationVibrate(type) {
+            try {
+                const { Haptics } = Capacitor.Plugins;
+                await Haptics.notification({ type: type });
+            } catch (error) {
+                console.error('Error with notification vibration:', error);
             }
         }
-
-        // Visual feedback alternative for iOS
-        function flashScreen() {
-            const flash = document.createElement('div');
-            flash.style.position = 'fixed';
-            flash.style.top = '0';
-            flash.style.left = '0';
-            flash.style.right = '0';
-            flash.style.bottom = '0';
-            flash.style.backgroundColor = 'rgba(255,255,255,0.1)';
-            flash.style.transition = 'opacity 0.2s';
-            document.body.appendChild(flash);
-
-            setTimeout(() => {
-                flash.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.removeChild(flash);
-                }, 200);
-            }, 100);
-        }
-
-        // Device detection
-        function isIOS() {
-            return [
-                'iPad Simulator',
-                'iPhone Simulator',
-                'iPod Simulator',
-                'iPad',
-                'iPhone',
-                'iPod'
-            ].includes(navigator.platform)
-            || (navigator.userAgent.includes("Mac") && "ontouchend" in document);
-        }
-
-        // Show appropriate message on page load
-        window.onload = function() {
-            if (isIOS()) {
-                console.log('iOS device detected - vibration not available');
-            }
-        };
     </script>
 </body>
 </html>
