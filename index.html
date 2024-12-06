@@ -3,69 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Import Capacitor core -->
-    <script src="https://unpkg.com/@capacitor/core@latest/dist/capacitor.js"></script>
-    <!-- Import Haptics plugin -->
-    <script src="https://unpkg.com/@capacitor/haptics@latest/dist/plugin.js"></script>
-    <title>Vibration Demo</title>
 </head>
 <style>
-    .button-container {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
-    }
-    button {
-        padding: 2rem;
-        margin: 0.5rem;
+    button{
+        padding: 4rem;
+        font-size: 24px;
     }
 </style>
 <body>
-    <div class="button-container">
-        <button onclick="vibrateDevice('light')">Light Vibration</button>
-        <button onclick="vibrateDevice('medium')">Medium Vibration</button>
-        <button onclick="vibrateDevice('heavy')">Heavy Vibration</button>
-        <button onclick="notificationVibrate('success')">Success Notification</button>
-        <button onclick="notificationVibrate('warning')">Warning Notification</button>
-        <button onclick="notificationVibrate('error')">Error Notification</button>
-    </div>
+    <button onclick="vibrateEnhanced()">Click to Vibrate</button>
 
-    <script>
-        document.addEventListener('deviceready', function() {
-            const { Haptics } = Capacitor.Plugins;
-        }, false);
-
-        async function vibrateDevice(intensity) {
-            try {
-                const { Haptics } = Capacitor.Plugins;
-                
-                switch(intensity) {
-                    case 'light':
-                        await Haptics.impact({ style: 'light' });
-                        break;
-                    case 'medium':
-                        await Haptics.impact({ style: 'medium' });
-                        break;
-                    case 'heavy':
-                        await Haptics.impact({ style: 'heavy' });
-                        break;
-                    default:
-                        await Haptics.vibrate();
-                }
-            } catch (error) {
-                console.error('Error with vibration:', error);
-            }
+<script>
+    function vibrateEnhanced() {
+        // Method 1: Standard Vibration API
+        if ('vibrate' in navigator) {
+            navigator.vibrate([5, 400, 10]);
+            return;
         }
 
-        async function notificationVibrate(type) {
-            try {
-                const { Haptics } = Capacitor.Plugins;
-                await Haptics.notification({ type: type });
-            } catch (error) {
-                console.error('Error with notification vibration:', error);
-            }
+        // Method 2: Webkit Vibration
+        if ('webkitVibrate' in navigator) {
+            navigator.webkitVibrate(500);
+            return;
         }
-    </script>
+
+        // Method 3: Using window.performance
+        if (window.performance && window.performance.now) {
+            const start = performance.now();
+            while (performance.now() - start < 500) {
+                // Intensive operation to trigger haptic
+            }
+            return;
+        }
+
+        // Method 4: Using AudioContext with different frequencies
+        try {
+            const context = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = context.createOscillator();
+            const gainNode = context.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(context.destination);
+            
+            // Set frequency to create more noticeable vibration effect
+            oscillator.frequency.value = 1;
+            gainNode.gain.value = 1;
+            
+            oscillator.start(context.currentTime);
+            oscillator.stop(context.currentTime + 0.2);
+            return;
+        } catch (e) {
+            console.log('AudioContext vibration failed');
+        }
+
+        // Method 5: Using Impact Feedback (iOS 13+)
+        try {
+            const impactFeedbackHeavy = window.impactHeavy || window.Haptics;
+            if (impactFeedbackHeavy) {
+                impactFeedbackHeavy.impactOccurred();
+                return;
+            }
+        } catch (e) {
+            console.log('Impact feedback not supported');
+        }
+
+        // Final fallback: alert user if nothing works
+        console.log('Vibration not supported on this device');
+    }
+
+    // Optional: Add touch event listener for better iOS response
+    document.addEventListener('touchstart', function() {
+        // Pre-initialize AudioContext on touch
+        const context = new (window.AudioContext || window.webkitAudioContext)();
+        context.resume().then(() => console.log('AudioContext initialized'));
+    });
+</script>
 </body>
 </html>
