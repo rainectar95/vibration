@@ -3,141 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iOS Haptic Feedback</title>
+    <title>Device Vibration Techniques</title>
     <style>
         body {
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background-color: #f4f4f4;
-            margin: 0;
-            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            gap: 20px;
         }
 
-        .haptic-button {
+        .vibration-button {
             padding: 15px 30px;
-            font-size: 18px;
-            background-color: #007aff;
+            font-size: 16px;
+            background-color: #4CAF50;
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
         }
 
-        .haptic-button:active {
-            transform: scale(0.98);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        .vibration-button:hover {
+            background-color: #45a049;
+        }
+
+        .vibration-button:active {
+            transform: scale(0.95);
+        }
+
+        #vibrationStatus {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
 <body>
-    <button id="hapticButton" class="haptic-button">
-        Trigger Haptic Feedback
+    <h1>Device Vibration Techniques</h1>
+    
+    <button id="nativeVibrationBtn" class="vibration-button">
+        Native Vibration
     </button>
+    
+    <button id="audioVibrationBtn" class="vibration-button">
+        Audio Vibration
+    </button>
+    
+    <button id="touchVibrationBtn" class="vibration-button">
+        Touch Vibration
+    </button>
+    
+    <div id="vibrationStatus">Vibration Status: Not Supported</div>
 
     <script>
-        class iOSHapticFeedback {
+        class VibrationManager {
             constructor() {
-                this.initHapticFeedback();
+                this.audioContext = null;
+                this.initializeVibrationTechniques();
             }
 
-            initHapticFeedback() {
-                // Create hidden audio elements for different feedback types
-                this.createHapticSounds();
+            initializeVibrationTechniques() {
+                this.checkVibrationSupport();
+                this.setupNativeVibration();
+                this.setupAudioVibration();
+                this.setupTouchVibration();
             }
 
-            createHapticSounds() {
-                // Create audio contexts for different haptic feedback types
-                this.lightImpact = this.createHapticSound(250, 0.1);
-                this.mediumImpact = this.createHapticSound(350, 0.2);
-                this.heavyImpact = this.createHapticSound(500, 0.3);
+            checkVibrationSupport() {
+                const statusElement = document.getElementById('vibrationStatus');
+                
+                // Check multiple vibration methods
+                const hasNativeVibration = 'vibrate' in navigator;
+                const hasWebKitVibration = 'webkitVibrate' in navigator;
+                const hasAudioContext = 'AudioContext' in window || 'webkitAudioContext' in window;
+
+                if (hasNativeVibration || hasWebKitVibration || hasAudioContext) {
+                    statusElement.textContent = 'Vibration: Supported ✅';
+                    statusElement.style.color = 'green';
+                } else {
+                    statusElement.textContent = 'Vibration: Not Supported ❌';
+                    statusElement.style.color = 'red';
+                }
             }
 
-            createHapticSound(frequency, duration) {
+            setupNativeVibration() {
+                const nativeBtn = document.getElementById('nativeVibrationBtn');
+                
+                nativeBtn.addEventListener('click', () => {
+                    // Multiple vibration patterns
+                    const vibrationPatterns = [
+                        [100],           // Short vibration
+                        [200, 100, 200], // Pulse pattern
+                        [50, 50, 50]     // Rapid pulses
+                    ];
+
+                    // Try different vibration methods
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(vibrationPatterns[0]);
+                    } else if ('webkitVibrate' in navigator) {
+                        navigator.webkitVibrate(vibrationPatterns[0]);
+                    } else {
+                        console.warn('Native vibration not supported');
+                    }
+                });
+            }
+
+            setupAudioVibration() {
+                const audioBtn = document.getElementById('audioVibrationBtn');
+                
+                audioBtn.addEventListener('click', () => {
+                    try {
+                        // Create audio context
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        const audioContext = new AudioContext();
+
+                        // Create oscillator
+                        const oscillator = audioContext.createOscillator();
+                        const gainNode = audioContext.createGain();
+
+                        // Configure vibration-like sound
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(50, audioContext.currentTime); // Low frequency
+                        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+
+                        // Connect audio nodes
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioContext.destination);
+
+                        // Trigger vibration
+                        oscillator.start();
+                        oscillator.stop(audioContext.currentTime + 0.1);
+                    } catch (error) {
+                        console.error('Audio vibration failed', error);
+                    }
+                });
+            }
+
+            setupTouchVibration() {
+                const touchBtn = document.getElementById('touchVibrationBtn');
+                
+                touchBtn.addEventListener('touchstart', (e) => {
+                    e.preventDefault(); // Prevent default touch behavior
+
+                    // Simulate haptic feedback
+                    touchBtn.style.transform = 'scale(0.95)';
+                    
+                    setTimeout(() => {
+                        touchBtn.style.transform = 'scale(1)';
+                    }, 100);
+
+                    // Optional: Add subtle sound
+                    this.playSubtleFeedbackSound();
+                });
+            }
+
+            playSubtleFeedbackSound() {
                 try {
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    const audioContext = new AudioContext();
+                    
                     const oscillator = audioContext.createOscillator();
                     const gainNode = audioContext.createGain();
 
-                    // Configure oscillator
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
 
-                    // Configure gain for intensity
-                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-
-                    // Connect and prepare oscillator
                     oscillator.connect(gainNode);
                     gainNode.connect(audioContext.destination);
 
-                    return { oscillator, gainNode, audioContext, duration };
+                    oscillator.start();
+                    oscillator.stop(audioContext.currentTime + 0.05);
                 } catch (error) {
-                    console.error('Haptic feedback initialization failed:', error);
-                    return null;
+                    console.error('Subtle feedback sound failed', error);
                 }
-            }
-
-            triggerHapticFeedback(type = 'light') {
-                let hapticSound;
-
-                switch(type) {
-                    case 'light':
-                        hapticSound = this.lightImpact;
-                        break;
-                    case 'medium':
-                        hapticSound = this.mediumImpact;
-                        break;
-                    case 'heavy':
-                        hapticSound = this.heavyImpact;
-                        break;
-                    default:
-                        hapticSound = this.lightImpact;
-                }
-
-                if (hapticSound) {
-                    try {
-                        // Start oscillator
-                        hapticSound.oscillator.start();
-                        
-                        // Stop after specified duration
-                        hapticSound.oscillator.stop(
-                            hapticSound.audioContext.currentTime + hapticSound.duration
-                        );
-
-                        // Recreate oscillator for future use
-                        this.recreateOscillator(hapticSound);
-                    } catch (error) {
-                        console.error('Haptic feedback error:', error);
-                    }
-                }
-            }
-
-            recreateOscillator(hapticSound) {
-                // Recreate oscillator after use to allow repeated triggers
-                setTimeout(() => {
-                    this.createHapticSounds();
-                }, 100);
             }
         }
 
-        // Initialize haptic feedback
-        const hapticFeedback = new iOSHapticFeedback();
-
-        // Button event listeners
-        const hapticButton = document.getElementById('hapticButton');
-
-        // Touch and click events for broad compatibility
-        hapticButton.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent default touch behavior
-            hapticFeedback.triggerHapticFeedback('light');
-        });
-
-        hapticButton.addEventListener('click', () => {
-            hapticFeedback.triggerHapticFeedback('medium');
+        // Initialize vibration manager
+        document.addEventListener('DOMContentLoaded', () => {
+            new VibrationManager();
         });
     </script>
 </body>
