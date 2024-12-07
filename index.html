@@ -3,53 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vibration Test</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>iOS Haptic Feedback</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .haptic-button {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #007aff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .haptic-button:active {
+            transform: scale(0.98);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Vibration Test</h1>
-        <button id="vibrate-button">Vibrate</button>
-        <p>Click the button to test the vibration effect.</p>
-    </div>
+    <button id="hapticButton" class="haptic-button">
+        Trigger Haptic Feedback
+    </button>
 
-    <script >
-        // Get the button element
-const vibrateButton = document.getElementById('vibrate-button');
+    <script>
+        class iOSHapticFeedback {
+            constructor() {
+                this.initHapticFeedback();
+            }
 
-// Create an AudioContext instance
-const audioContext = new AudioContext();
+            initHapticFeedback() {
+                // Create hidden audio elements for different feedback types
+                this.createHapticSounds();
+            }
 
-// Define the vibration frequency (lower values create stronger vibrations)
-const frequency = 500;
+            createHapticSounds() {
+                // Create audio contexts for different haptic feedback types
+                this.lightImpact = this.createHapticSound(250, 0.1);
+                this.mediumImpact = this.createHapticSound(350, 0.2);
+                this.heavyImpact = this.createHapticSound(500, 0.3);
+            }
 
-// Define the vibration duration (in seconds)
-const duration = 2;
+            createHapticSound(frequency, duration) {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
 
-// Create a function to generate the vibration sound
-function vibrate() {
-    // Create an oscillator node
-    const oscillator = audioContext.createOscillator();
+                    // Configure oscillator
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
 
-    // Set the oscillator frequency
-    oscillator.type = 'sine';
-    oscillator.frequency.value = frequency;
+                    // Configure gain for intensity
+                    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
 
-    // Connect the oscillator to the destination (speakers)
-    oscillator.connect(audioContext.destination);
+                    // Connect and prepare oscillator
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
 
-    // Start the oscillator
-    oscillator.start();
+                    return { oscillator, gainNode, audioContext, duration };
+                } catch (error) {
+                    console.error('Haptic feedback initialization failed:', error);
+                    return null;
+                }
+            }
 
-    // Stop the oscillator after the specified duration
-    setTimeout(() => {
-        oscillator.stop();
-    }, duration * 1000);
-}
+            triggerHapticFeedback(type = 'light') {
+                let hapticSound;
 
-// Add an event listener to the button to trigger the vibration
-vibrateButton.addEventListener('click', vibrate);
+                switch(type) {
+                    case 'light':
+                        hapticSound = this.lightImpact;
+                        break;
+                    case 'medium':
+                        hapticSound = this.mediumImpact;
+                        break;
+                    case 'heavy':
+                        hapticSound = this.heavyImpact;
+                        break;
+                    default:
+                        hapticSound = this.lightImpact;
+                }
 
+                if (hapticSound) {
+                    try {
+                        // Start oscillator
+                        hapticSound.oscillator.start();
+                        
+                        // Stop after specified duration
+                        hapticSound.oscillator.stop(
+                            hapticSound.audioContext.currentTime + hapticSound.duration
+                        );
+
+                        // Recreate oscillator for future use
+                        this.recreateOscillator(hapticSound);
+                    } catch (error) {
+                        console.error('Haptic feedback error:', error);
+                    }
+                }
+            }
+
+            recreateOscillator(hapticSound) {
+                // Recreate oscillator after use to allow repeated triggers
+                setTimeout(() => {
+                    this.createHapticSounds();
+                }, 100);
+            }
+        }
+
+        // Initialize haptic feedback
+        const hapticFeedback = new iOSHapticFeedback();
+
+        // Button event listeners
+        const hapticButton = document.getElementById('hapticButton');
+
+        // Touch and click events for broad compatibility
+        hapticButton.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent default touch behavior
+            hapticFeedback.triggerHapticFeedback('light');
+        });
+
+        hapticButton.addEventListener('click', () => {
+            hapticFeedback.triggerHapticFeedback('medium');
+        });
     </script>
 </body>
 </html>
