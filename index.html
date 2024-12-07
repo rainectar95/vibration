@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibration Test</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Vibration Test</h1>
+        <button id="vibrate-button">Vibrate</button>
+        <p>Click the button to test the vibration effect.</p>
+    </div>
+
+    <script >
+        // Get the button element
+const vibrateButton = document.getElementById('vibrate-button');
+
+// Create an AudioContext instance
+const audioContext = new AudioContext();
+
+// Define the vibration frequency (lower values create stronger vibrations)
+const frequency = 200;
+
+// Define the vibration duration (in seconds)
+const duration = 2;
+
+// Create a function to generate the vibration sound
+function vibrate() {
+    // Create an oscillator node
+    const oscillator = audioContext.createOscillator();
+
+    // Set the oscillator frequency
+    oscillator.type = 'sine';
+    oscillator.frequency.value = frequency;
+
+    // Connect the oscillator to the destination (speakers)
+    oscillator.connect(audioContext.destination);
+
+    // Start the oscillator
+    oscillator.start();
+
+    // Stop the oscillator after the specified duration
+    setTimeout(() => {
+        oscillator.stop();
+    }, duration * 1000);
+}
+
+// Add an event listener to the button to trigger the vibration
+vibrateButton.addEventListener('click', vibrate);
+
+    </script>
+</body>
+</html>
